@@ -87,8 +87,8 @@ $fa_colors: (
   'teal_2': ( color: #14A2BF, contrast_name: 'black', contrast_color: #000000 ),
   'teal_3': ( color: #E4F3F8, contrast_name: 'teal_1', contrast_color: #10788E ),
 );
-$fa_icon_root: 'http://www.lib.umich.edu/falafel/icons/';
-$fa_font_root: 'http://www.lib.umich.edu/falafel/fonts/';
+$fa_icon_root: 'https://www.lib.umich.edu/falafel/v0/icons/';
+$fa_font_root: 'https://www.lib.umich.edu/falafel/v0/fonts/';
 $fa_width_large: '75em';
 $fa_width_small: '55em';
 $fa_width_tiny: '35em';
@@ -228,7 +228,7 @@ $fa_color_names: map_keys($fa_colors);
   }
 }
 
-@mixin fa_main_font {
+@mixin __fa_sans {
   font-family: "Helvetica Neue",
                Helvetica,
                "Liberation Sans",
@@ -238,17 +238,7 @@ $fa_color_names: map_keys($fa_colors);
                sans-serif;
 }
 
-@mixin fa_body_font {
-  font-family: "PT Serif",
-               "DejaVu Serif",
-               "Bitstream Vera Serif",
-               "Liberation Serif",
-               Georgia,
-               serif;
-}
-
-@mixin fa_header_font {
-  line-height: 1.2em;
+@mixin __fa_sans_big {
   font-family: "Open Sans",
                "Helvetica Neue",
                Helvetica,
@@ -259,7 +249,16 @@ $fa_color_names: map_keys($fa_colors);
                sans-serif;
 }
 
-@mixin fa_small_font {
+@mixin __fa_serif {
+  font-family: "PT Serif",
+               "DejaVu Serif",
+               "Bitstream Vera Serif",
+               "Liberation Serif",
+               Georgia,
+               serif;
+}
+
+@mixin __fa_serif_small {
   font-family: "PT Caption",
                "DejaVu Serif",
                "Bitstream Vera Serif",
@@ -267,6 +266,31 @@ $fa_color_names: map_keys($fa_colors);
                Georgia,
                serif;
 }
+
+@mixin fa_main_font {
+  @include __fa_sans;
+}
+
+@mixin fa_body_font {
+  @include __fa_serif;
+}
+
+@mixin fa_header_font {
+  @include __fa_sans_big;
+}
+
+@mixin fa_site_header_font {
+  @include __fa_serif;
+}
+
+@mixin fa_small_font {
+  @include __fa_serif_small;
+}
+
+@mixin fa_tag_font {
+  @include __fa_sans;
+}
+
 
 @mixin fa_background_icon($icon_name:  $icon_name,
                           $icon_color: $icon_color,
@@ -278,7 +302,7 @@ $fa_color_names: map_keys($fa_colors);
                           $v_nudge:    '',
                           $icon_root:  $fa_icon_root) {
 
-  background-image:    url(#{$icon_root}#{$icon_name}__#{$icon_color}.svg);
+  background-image:    url(#{$icon_root}#{$icon_color}/#{$icon_name}.svg);
   background-repeat:   no-repeat;
   background-size:     $width $height;
   background-position: $horizontal
@@ -289,15 +313,16 @@ $fa_color_names: map_keys($fa_colors);
 
 @mixin fa_pseudo_icon($icon_name,
                       $icon_color,
-                      $width:       false,
-                      $height:      false,
-                      $element:     before,
-                      $padding:     0.5em,
-                      $outer_nudge: 0,
-                      $inner_nudge: 0,
-                      $position:    left,
-                      $fill:        transparent,
-                      $icon_root:   $fa_icon_root) {
+                      $width:         false,
+                      $height:        false,
+                      $element:       before,
+                      $padding:       0.5em,
+                      $border_radius: false,
+                      $outer_nudge:   0,
+                      $inner_nudge:   0,
+                      $position:      left,
+                      $fill:          transparent,
+                      $icon_root:     $fa_icon_root) {
 
   $width:  if($width,  $width,  auto);
   $height: if($height, $height, auto);
@@ -313,11 +338,19 @@ $fa_color_names: map_keys($fa_colors);
     @error "height and/or width must be a numeric unit such as '1rem' or '50px'";
   }
 
-  $size: $size + ($padding * 2);
+  $centering_direction: top;
+  $centering_dimention: height;
 
-  padding-#{$position}: $size + $outer_nudge + $inner_nudge;
-  min-height:           $size;
-  position:             relative;
+  @if $position == top or $position == bottom {
+    $centering_direction: left;
+    $centering_dimention: width;
+  }
+
+  $size_forumula: "(#{$size} + (#{$padding} * 2))";
+
+  padding-#{$position}:        calc(#{$size_forumula} + #{$outer_nudge} + #{$inner_nudge});
+  min-#{$centering_dimention}: calc(#{$size_forumula});
+  position:                    relative;
 
   &::#{$element} {
     @include fa_background_icon(
@@ -331,13 +364,14 @@ $fa_color_names: map_keys($fa_colors);
     content:          '';
     display:          block;
     background-color: $fill;
-    width:            $size;
-    height:           $size;
-    border-radius:    $size / 2;
+    width:            calc(#{$size_forumula});
+    height:           calc(#{$size_forumula});
+    border-radius:    if($border_radius, $border_radius, calc(#{$size_forumula} / 2));
     position:         absolute;
     #{$position}:     $outer_nudge;
-    top:              50%;
-    margin-top:       -$size / 2;
+
+    #{$centering_direction}:        50%;
+    margin-#{$centering_direction}: calc(-1 * #{$size_forumula} / 2)
   }
 }
 
@@ -422,9 +456,12 @@ $fa_color_names: map_keys($fa_colors);
 }
 
 @mixin fa_tag($fill: $fa_main_3, $color: $fa_contrast_main_3) {
+  @include fa_tag_font;
+
   display: inline-block;
-  padding: 0.2rem 0.3rem;
-  margin: 0;
+  padding: 0.2rem 0.4rem;
+  position: relative;
+  bottom: 0.2rem;
 
   background-color: $fill;
   border-radius: 0.2rem;
